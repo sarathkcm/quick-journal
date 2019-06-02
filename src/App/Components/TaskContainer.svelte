@@ -1,6 +1,7 @@
 <script>
   import Task from "./Task.svelte";
   import { createEventDispatcher } from "svelte";
+  import _ from "lodash";
   export let tasks;
 
   function makeAsChild(task, index) {
@@ -21,9 +22,9 @@
   ) {
     if (addToRoot) {
       tasks = [
-        ...tasks.slice(0, index+1),
+        ...tasks.slice(0, index + 1),
         ...addToRoot,
-        ...tasks.slice(index+1, tasks.length)
+        ...tasks.slice(index + 1, tasks.length)
       ];
     }
     if (update) {
@@ -52,10 +53,7 @@
           ...tasks.slice(0, thisTaskIndex - 1),
           ...moveUp,
           ...tasks.slice(thisTaskIndex - 1, thisTaskIndex),
-          ...tasks.slice(
-            thisTaskIndex + moveUp.length,
-            tasks.length
-          )
+          ...tasks.slice(thisTaskIndex + moveUp.length, tasks.length)
         ];
       }
     }
@@ -69,13 +67,36 @@
             thisTaskIndex + moveDown.length + 1
           ),
           ...moveDown,
-          ...tasks.slice(
-            thisTaskIndex + moveDown.length + 1,
-            tasks.length
-          )
+          ...tasks.slice(thisTaskIndex + moveDown.length + 1, tasks.length)
         ];
       }
     }
+  }
+
+  function getTaskIdList() {
+    const mapTaskToId = task => [
+      task.id,
+      ..._(task.children)
+        .map(mapTaskToId)
+        .value()
+    ];
+    const taskIdList = _(tasks)
+      .flatMapDeep(mapTaskToId)
+      .value();
+    return taskIdList;
+  }
+  function onFocusAbove(event) {
+    const taskIdList = getTaskIdList();
+    const index = taskIdList.findIndex(t => t === event.detail.task.id);
+    if (index <= 0) return;
+    document.getElementById(taskIdList[index - 1]).focus();
+  }
+
+  function onFocusBelow(event) {
+    const taskIdList = getTaskIdList();
+    const index = taskIdList.findIndex(t => t === event.detail.task.id);
+    if (index >= taskIdList.length - 1) return;
+    document.getElementById(taskIdList[index + 1]).focus();
   }
 </script>
 
@@ -83,5 +104,7 @@
   <Task
     {task}
     on:make-child={() => makeAsChild(task, index)}
-    on:updates={event => onTaskUpdates(event, task, index)} />
+    on:updates={event => onTaskUpdates(event, task, index)}
+    on:focusabove={onFocusAbove}
+    on:focusbelow={onFocusBelow} />
 {/each}

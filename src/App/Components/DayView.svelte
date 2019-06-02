@@ -13,20 +13,6 @@
   }
 
   taskStore.load(todaysTaskFilter);
-
-  let enteredText = "";
-  function addTask() {
-    taskStore.add({
-      title: enteredText,
-      date: new Date()
-    });
-    enteredText = "";
-  }
-
-
 </script>
-
-<input type="text" bind:value={enteredText} />
-<button on:click={addTask}>Add</button>
 
 <TaskContainer tasks={$taskStore} />

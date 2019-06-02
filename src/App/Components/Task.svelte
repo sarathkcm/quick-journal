@@ -63,6 +63,20 @@
       });
       await tick();
       document.getElementById(task.id).focus();
+    } else if (!e.altKey && e.code == "ArrowDown") {
+      e.preventDefault();
+      e.stopPropagation();
+      dispatch("focusbelow", { task });
+    } else if (!e.altKey && e.code == "ArrowUp") {
+      e.preventDefault();
+      e.stopPropagation();
+      dispatch("focusabove", { task });
+    } else if (!e.altKey && e.code == "Backspace") {
+      if (task.title) return;
+      e.preventDefault();
+      e.stopPropagation();
+      dispatch("focusabove", { task });
+      dispatch("updates", { remove: [task] });
     }
   }
 
@@ -169,7 +183,21 @@
       }
     }
   }
+  // function onFocusAbove(index) {
+  //   if (!task.children[index - 1]) {
+  //     dispatch("focus-above", {});
+  //     return;
+  //   }
+  //   document.getElementById(task.children[index - 1].id).focus();
+  // }
 
+  // function onFocusBelow(index) {
+  //   if (!task.children[index + 1]) {
+  //     dispatch("focus-below", {});
+  //     return;
+  //   }
+  //   document.getElementById(task.children[index + 1].id).focus();
+  // }
   async function handleInput(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -177,11 +205,13 @@
     task.title = val;
   }
   let dateTimeString;
-  $: dateTimeString = DateTime.fromISO(task.date).toLocaleString(DateTime.DATE_HUGE);
+  $: dateTimeString = DateTime.fromISO(task.date).toLocaleString(
+    DateTime.DATE_HUGE
+  );
 </script>
 
 <style>
-  .completed {
+  .cancelled {
     text-decoration-line: line-through;
   }
 
@@ -213,13 +243,13 @@
   <input
     type="text"
     tabindex="0"
-    class:completed={task.completed}
+    class:cancelled={task.cancelled}
     id={task.id}
     style="display:inline-block"
     contenteditable
     bind:value={task.title}
     autocomplete="off"
-    placeholder="Add task" />
+    placeholder="Enter task description" />
   <div class="date" tabindex="0"> {dateTimeString} </div>
 
   {#if task.children}
@@ -228,7 +258,9 @@
         task={child}
         on:make-child={() => makeChildAsSubChild(child, index)}
         on:make-root={() => makeChildAsRoot(child, index)}
-        on:updates={event => onChildTaskUpdates(event, task, index)} />
+        on:updates={event => onChildTaskUpdates(event, task, index)}
+        on:focusbelow
+        on:focusabove />
     {/each}
   {/if}
 </div>
