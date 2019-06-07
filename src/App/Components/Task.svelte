@@ -38,7 +38,7 @@
       });
       await tick();
       document.getElementById(task.id).focus();
-    } else if (!e.shiftKey && e.code == "Enter") {
+    } else if (!e.shiftKey && !e.altKey && e.code == "Enter") {
       e.preventDefault();
       e.stopPropagation();
       let newTask = _.insert([], { title: "", date: new Date() });
@@ -77,6 +77,13 @@
       e.stopPropagation();
       dispatch("focusabove", { task });
       dispatch("updates", { remove: [task] });
+    } else if (e.altKey && e.code == "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      var event = document.createEvent("HTMLEvents");
+      event.initEvent("contextmenu", false, true);
+      document.getElementById(`holder-${task.id}`).dispatchEvent(event);
+      document.getElementById(`contextMenu-${task.id}`).focus();
     }
   }
 
@@ -183,21 +190,7 @@
       }
     }
   }
-  // function onFocusAbove(index) {
-  //   if (!task.children[index - 1]) {
-  //     dispatch("focus-above", {});
-  //     return;
-  //   }
-  //   document.getElementById(task.children[index - 1].id).focus();
-  // }
 
-  // function onFocusBelow(index) {
-  //   if (!task.children[index + 1]) {
-  //     dispatch("focus-below", {});
-  //     return;
-  //   }
-  //   document.getElementById(task.children[index + 1].id).focus();
-  // }
   async function handleInput(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -208,6 +201,21 @@
   $: dateTimeString = DateTime.fromISO(task.date).toLocaleString(
     DateTime.DATE_HUGE
   );
+
+  function addMenu() {
+    window
+      .$(`#holder-${task.id}`)
+      .contextMenu("menu", `#contextMenu-${task.id}`, {
+        triggerOn: "contextmenu"
+      });
+
+       window
+      .$(`#datepicker-${task.id}`)
+      .datepicker({
+        inline:true,
+        container:`#datepicker-${task.id}`
+      });
+  }
 </script>
 
 <style>
@@ -235,7 +243,12 @@
   }
 </style>
 
-<div style="margin-left:20px;" on:keydown={handleKeyEvent}>
+<div
+  style="margin-left:20px;"
+  on:keydown={handleKeyEvent}
+  class="holder"
+  id="holder-{task.id}">
+
   <input
     type="checkbox"
     bind:checked={task.completed}
@@ -250,6 +263,7 @@
     bind:value={task.title}
     autocomplete="off"
     placeholder="Enter task description" />
+
   <div class="date" tabindex="0"> {dateTimeString} </div>
 
   {#if task.children}
@@ -264,3 +278,54 @@
     {/each}
   {/if}
 </div>
+
+<svelte:window on:DOMContentLoaded={addMenu} />
+
+<ul class="contextMenu" id="contextMenu-{task.id}">
+  <li on:click={toggleCompleted}>
+    <span>
+      <i class="iw-mIcon fas fa-check" style="color:Green" />
+    </span>
+    Mark as {task.completed ? 'incomplete' : 'completed'}
+    <span class="shortcut">Alt+D</span>
+  </li>
+  <li on:click={toggleCancel}>
+    <span>
+      <i class="iw-mIcon fas fa-ban " style="color:Tomato" />
+      Mark as {task.cancelled ? 'not cancelled' : 'cancelled'}
+    </span>
+    <span class="shortcut">Alt+C</span>
+  </li>
+  <hr />
+  <li on:click={toggleCancel}>
+    <span>
+      <i class="iw-mIcon fas fa-calendar " style="color:skyblue" />
+      Move to
+    </span>
+    <ul>
+      <li>Tomorrow</li>
+      <li>Next working day</li>
+      <li>
+        Next week
+        <ul>
+          <li>Monday</li>
+          <li>Tuesday</li>
+          <li>Wednesday</li>
+          <li>Thursday</li>
+          <li>Friday</li>
+          <li>Saturday</li>
+          <li>Sunday</li>
+        </ul>
+      </li>
+      <li>Next month</li>
+      <li>Select date
+      <ul>
+      <li>
+      <div id="datepicker-{task.id}" class="date-picker">
+      </div>
+      </li>
+      </ul>
+      </li>
+    </ul>
+  </li>
+</ul>

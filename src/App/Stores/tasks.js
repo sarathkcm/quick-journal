@@ -1,6 +1,7 @@
 import { writable, readable } from 'svelte/store';
 
 import low from "lowdb";
+import _ from "lodash";
 import lodashId from "lodash-id";
 import LocalStorage from "lowdb/adapters/LocalStorage";
 
@@ -14,6 +15,10 @@ function createTasksStore() {
     let filter;
     const { subscribe, set } = writable([]);
     if (db.get('tasks').value().length == 0) {
+        // _.range(500).forEach(element => {
+        // db.get('tasks').insert({ title: `Task number ${element}`, date: new Date() }).write();
+        // });
+
         db.get('tasks').insert({ title: "First Task", date: new Date() }).write();
         db.get('tasks').insert({ title: "Second Task", date: new Date() }).write();
         db.get('tasks').insert({ title: "Third Task", date: new Date() }).write();
@@ -22,6 +27,7 @@ function createTasksStore() {
         db.get('tasks').insert({ title: "6th Task", date: new Date() }).write();
         db.get('tasks').insert({ title: "7th Task", date: new Date() }).write();
         db.get('tasks').insert({ title: "8th Task", date: new Date() }).write();
+
     }
 
     return {
