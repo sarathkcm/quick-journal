@@ -1,5 +1,5 @@
 <script>
-  import { createEventDispatcher, tick } from "svelte";
+  import { createEventDispatcher, tick , onMount } from "svelte";
   import lodashId from "lodash-id";
   import _ from "lodash";
   import { DateTime } from "luxon";
@@ -83,7 +83,7 @@
       var event = document.createEvent("HTMLEvents");
       event.initEvent("contextmenu", false, true);
       document.getElementById(`holder-${task.id}`).dispatchEvent(event);
-      document.getElementById(`contextMenu-${task.id}`).focus();
+      document.getElementById(`${task.id}`).blur();
     }
   }
 
@@ -202,19 +202,34 @@
     DateTime.DATE_HUGE
   );
 
+  onMount(()=>{
+      addMenu();
+      addCalendar();
+      return () => {
+          destroyCalendar();
+          destroyMenu();
+      };
+  });
+
   function addMenu() {
     window
       .$(`#holder-${task.id}`)
       .contextMenu("menu", `#contextMenu-${task.id}`, {
-        triggerOn: "contextmenu"
+        triggerOn: "contextmenu",
+        onClose:() => {document.getElementById(`${task.id}`).focus();}
       });
-
-       window
-      .$(`#datepicker-${task.id}`)
-      .datepicker({
-        inline:true,
-        container:`#datepicker-${task.id}`
-      });
+  }
+  function destroyMenu() {
+    window.$(`#holder-${task.id}`).contextMenu("destroy");
+  }
+  function destroyCalendar() {
+    window.$(`#datepicker-${task.id}`).datepicker('destroy');
+  }
+  function addCalendar() {
+    window.$(`#datepicker-${task.id}`).datepicker({
+      inline: true,
+      container: `#datepicker-${task.id}`
+    });
   }
 </script>
 
@@ -247,7 +262,7 @@
   style="margin-left:20px;"
   on:keydown={handleKeyEvent}
   class="holder"
-  id="holder-{task.id}">
+  id="holder-{task.id}" on:contextmenu={(evt) => evt.stopPropagation()}>
 
   <input
     type="checkbox"
@@ -262,7 +277,7 @@
     contenteditable
     bind:value={task.title}
     autocomplete="off"
-    placeholder="Enter task description" />
+    placeholder="Enter task description"  />
 
   <div class="date" tabindex="0"> {dateTimeString} </div>
 
@@ -279,10 +294,8 @@
   {/if}
 </div>
 
-<svelte:window on:DOMContentLoaded={addMenu} />
-
 <ul class="contextMenu" id="contextMenu-{task.id}">
-  <li on:click={toggleCompleted}>
+  <li on:click={toggleCompleted} id="contextMenu-frist-item-{task.id}">
     <span>
       <i class="iw-mIcon fas fa-check" style="color:Green" />
     </span>
@@ -318,13 +331,13 @@
         </ul>
       </li>
       <li>Next month</li>
-      <li>Select date
-      <ul>
       <li>
-      <div id="datepicker-{task.id}" class="date-picker">
-      </div>
-      </li>
-      </ul>
+        Select date
+        <ul>
+          <li>
+            <div id="datepicker-{task.id}" class="date-picker" />
+          </li>
+        </ul>
       </li>
     </ul>
   </li>
